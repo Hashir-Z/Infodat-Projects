@@ -57,6 +57,8 @@ public class LibrarySystem
 
         String getBorrowedBy();
 
+        void setBorrowedBy(String username);
+
         void displayInfo();
     }
 
@@ -127,6 +129,12 @@ public class LibrarySystem
         }
 
         @Override
+        public void setBorrowedBy(String username)
+        {
+            this.borrowedBy = username;
+        }
+
+        @Override
         public void displayInfo()
         {
             System.out.println("Name: " + title);
@@ -145,9 +153,7 @@ public class LibrarySystem
 
         void removeBook(String isbn);
 
-        IBook searchBookByTitle(String title);
-
-        IBook searchBookByISBN(String isbn);
+        void searchBook(String username, String field);
 
         void displayAllBooks();
     }
@@ -236,30 +242,112 @@ public class LibrarySystem
         }
 
         @Override
-        public IBook searchBookByTitle(String title)
+        public void searchBook(String username, String field)
         {
-            for (int i = 0; i < libBooks.size(); i++)
-            {
-                if (libBooks.get(i).getTitle() == title)
-                {
-                    return (libBooks.get(i));
-                }
-            }
-            return libBooks.get(libBooks.size() - 1);
-        }
+            clearTerminal(false);
+            String searchTerm;
+            String searchResult;
+            int choice;
+            boolean isTitleSearch = false;
+            boolean bookFound = false;
+            Scanner inputScanner = new Scanner(System.in);
 
-        @Override
-        public IBook searchBookByISBN(String isbn)
-        {
-            for (int i = 0; i < libBooks.size(); i++)
+            System.out.print("Enter Book " + field + ": ");
+            searchTerm = inputScanner.nextLine();
+
+            if (field.contains("Title"))
             {
-                if (libBooks.get(i).getISBN() == isbn)
-                {
-                    return libBooks.get(i);
-                }
+                isTitleSearch = true;
             }
 
-            return libBooks.get(libBooks.size());
+            for (int i = 0; i < libBooks.size(); i++)
+            {
+                clearTerminal(false);
+                if (isTitleSearch)
+                {
+                    searchResult = libBooks.get(i).getTitle();
+                } else
+                {
+                    searchResult = libBooks.get(i).getISBN();
+                }
+
+                if (searchResult.contains(searchTerm))
+                {
+                    bookFound = true;
+                    libBooks.get(i).displayInfo();
+
+                    // Check if book has been borrowed by user
+                    if (libBooks.get(i).getBorrowedBy() == username)
+                    {
+                        System.out.print("Book has Already Been Borrowed by You!");
+                        clearTerminal(true);
+                        searchBook(username, field);
+                        return;
+                    }
+                    // Check if book has been borrowed by someone
+                    else if (libBooks.get(i).getBorrowedBy() != null)
+                    {
+                        System.out.print("Book has Already Been Borrowed by Someone Else!");
+                        clearTerminal(true);
+                        searchBook(username, field);
+                        return;
+                    }
+                    System.out.print("Would you like to borrow this book? \n [1] Yes \n [2] No \nEnter your choice: ");
+                    choice = inputScanner.nextInt();
+
+                    switch (choice)
+                    {
+                    case 1:
+                    {
+                        // Update DB
+                        String QUERY = "SELECT * FROM Books where " + field + "= '" + searchResult + "'";
+
+                        // Check if book records already exist
+                        try (ResultSet rs = stmt.executeQuery(QUERY))
+                        {
+                            if (rs.next())
+                            {
+                                // Book exists, update the tUsername field
+                                String updateQuery = "UPDATE Books SET BorrowedBy = ? WHERE " + field + "= ?";
+                                try (PreparedStatement updateStmt = conn.prepareStatement(updateQuery))
+                                {
+                                    updateStmt.setString(1, username);
+                                    updateStmt.setString(2, searchTerm);
+                                    updateStmt.executeUpdate();
+                                    System.out.println("Book Borrowed Successfully!");
+                                    libBooks.get(i).setBorrowedBy(username);
+                                    return;
+                                } catch (Exception e)
+                                {
+                                    System.out.println("Failed");
+                                }
+
+                            }
+                        } catch (Exception e)
+                        {
+                            System.out.println("Failed");
+                        }
+                    }
+                    case 2:
+                    {
+                        continue;
+                    }
+                    default:
+                    {
+                    }
+                    }
+                }
+            }
+            if (bookFound)
+            {
+                System.out.println("No More Books With This " + field + "!");
+
+            } else
+            {
+                System.out.println("No Books Found!");
+            }
+            clearTerminal(true);
+            return;
         }
 
         @Override
@@ -269,6 +357,20 @@ public class LibrarySystem
             {
                 IBook.displayInfo();
             }
+        }
+
+        public List<IBook> getBooksOwned(String username)
+        {
+            List<IBook> books = new ArrayList<>();
+
+            for (int i = 0; i < libBooks.size(); i++)
+            {
+                if (libBooks.get(i).getBorrowedBy() != null && libBooks.get(i).getBorrowedBy().contentEquals(username))
+                {
+                    books.add(libBooks.get(i));
+                }
+            }
+            return books;
         }
     }
 
@@ -282,8 +384,8 @@ public class LibrarySystem
     public abstract class UserAuthHandler
     {
         private String userType;
+        private String username;
         private boolean isAdmin;
-
         libraryImp1 libObj;
 
         public UserAuthHandler(libraryImp1 libObj)
@@ -299,6 +401,16 @@ public class LibrarySystem
         public void setisAdmin(boolean isAdmin)
         {
             this.isAdmin = isAdmin;
+        }
+
+        public void setUsername(String username)
+        {
+            this.username = username;
+        }
+
+        public String getUsername()
+        {
+            return this.username;
         }
 
         public void mainMenu()
@@ -349,7 +461,6 @@ public class LibrarySystem
             Scanner inputScanner = new Scanner(System.in);
 
             boolean run = true;
-            String username;
             String password;
 
             boolean success;
@@ -391,7 +502,6 @@ public class LibrarySystem
 
             // Variables
             Scanner inputScanner = new Scanner(System.in);
-            String username;
             String password;
 
             // Getting Username + Password
@@ -433,9 +543,9 @@ public class LibrarySystem
             return false;
         }
 
-        private void addUsers(String Username, String Password)
+        private void addUsers(String username, String password)
         {
-            String QUERY = "INSERT INTO users (tUsername, tPassword, bisAdmin) VALUES ('" + Username + "', '" + Password
+            String QUERY = "INSERT INTO users (tUsername, tPassword, bisAdmin) VALUES ('" + username + "', '" + password
                     + "', " + isAdmin + ")";
 
             try
@@ -499,13 +609,13 @@ public class LibrarySystem
                 System.out.println(
                         "========================================= \n\t\tMain Menu \n========================================= ");
 
-                System.out.print("[1] Borrow Book \n[2] Return Book \n[3] Exit \nEnter Your Choice: ");
+                System.out.print("[1] Borrow Book \n[2] Return Book \n[3] Logout \nEnter Your Choice: ");
                 choice = inputScanner.nextInt();
                 switch (choice)
                 {
                 case 1 -> // Display All Books
                 {
-                    libObj.displayAllBooks();
+                    borrowBook();
                     clearTerminal(false);
                     break;
                 }
@@ -543,9 +653,10 @@ public class LibrarySystem
             do
             {
                 System.out.println(
-                        "========================================= \n\t\tMain Menu \n========================================= ");
+                        "========================================= \n\t\tBorrow Book \n========================================= ");
 
-                System.out.print("[1] Borrow Book \n[2] Return Book \n[3] Exit \nEnter Your Choice: ");
+                System.out.print(
+                        "[1] Display All Books \n[2] Search by Title \n[3] Search By ISBN \n[4] Exit \nEnter Your Choice: ");
                 choice = inputScanner.nextInt();
                 switch (choice)
                 {
@@ -555,15 +666,20 @@ public class LibrarySystem
                     clearTerminal(false);
                     break;
                 }
-                case 2 -> // Admin Main Menu
+                case 2 -> // Borrow By Title
                 {
-                    returnBook();
+                    libObj.searchBook(getUsername(), "Title");
                     clearTerminal(false);
                     break;
                 }
-                case 3 -> // Exit Program
+                case 3 -> // Borrow By ISBN
                 {
-                    System.out.println("Exiting Program!");
+                    libObj.searchBook(getUsername(), "ISBN");
+                    clearTerminal(true);
+                    break;
+                }
+                case 4 -> // Exit Program
+                {
                     run = false;
                 }
                 default -> // Default
@@ -579,8 +695,58 @@ public class LibrarySystem
         @Override
         public void returnBook()
         {
-            System.out.println("Returning book: " + book.getTitle() + " by " + book.getAuthor());
-            // Add logic to return the book
+            int j = 1;
+            Scanner inputScanner = new Scanner(System.in);
+            List<IBook> booksOwned = libObj.getBooksOwned(getUsername());
+
+            System.out.println("Books Borrowed:");
+
+            for (var iterable_element : booksOwned)
+            {
+                System.out.print("[" + j + "] ");
+                iterable_element.displayInfo();
+                j++;
+            }
+
+            System.out.print("Which Book Would You Like To Return: ");
+            int choice = inputScanner.nextInt() - 1;
+
+            String isbn = booksOwned.get(choice).getISBN();
+            // Update DB
+            String QUERY = "SELECT * FROM Books where ISBN = '" + isbn + "'";
+
+            // Check if book records already exist
+            try (ResultSet rs = stmt.executeQuery(QUERY))
+            {
+                if (rs.next())
+                {
+                    String updateQuery = "UPDATE Books SET BorrowedBy = NULL WHERE ISBN = '" + isbn + "'";
+                    try (PreparedStatement updateStmt = conn.prepareStatement(updateQuery))
+                    {
+                        updateStmt.executeUpdate();
+                        System.out.println("Book Returned Successfully!");
+                        // Delete from IBooks list.
+                        for (int i = 0; i < libObj.libBooks.size(); i++)
+                        {
+                            if (libObj.libBooks.get(i).getISBN() == isbn)
+                            {
+                                libObj.libBooks.remove(i);
+                            }
+                        }
+                        clearTerminal(true);
+                        return;
+                    } catch (Exception e)
+                    {
+                        System.out.println("Failed");
+                    }
+
+                }
+            } catch (Exception e)
+            {
+                System.out.println("Failed");
+            }
+
+            clearTerminal(true);
         }
     }
 
