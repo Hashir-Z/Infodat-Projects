@@ -158,12 +158,12 @@ public class LibrarySystem
         void displayAllBooks();
     }
 
-    public class libraryImp1 implements ILibrary
+    public class LibraryImp1 implements ILibrary
     {
         List<IBook> libBooks = new ArrayList<>();
 
         // Constructor to add 100 books right from the get-go
-        public libraryImp1()
+        public LibraryImp1()
         {
             // Add 100 books to the DB if they don't exist already
             for (int i = 1; i <= 100; i++)
@@ -228,31 +228,6 @@ public class LibrarySystem
             }
             clearTerminal(true);
         }
-
-        // public void addBook(IBook book)
-        // {
-        // String QUERY = "INSERT INTO Books (Title, Author, ISBN, Publisher, Genre,
-        // PublicationDate, BorrowedBy) VALUES ('"
-        // + book.getTitle() + "','" + book.getAuthor() + "'," + book.getISBN() + ",'" +
-        // book.getPublisher()
-        // + "','" + book.getGenre() + "'," + new
-        // java.sql.Date(book.getPublicationDate().getTime())
-        // + ", NULL)";
-
-        // try
-        // {
-        // stmt.executeUpdate(QUERY);
-        // } catch (Exception e)
-        // {
-        // System.out.println("Could not add book!" + e.getMessage());
-        // clearTerminal(true);
-        // return;
-        // }
-
-        // this.libBooks.add(book);
-        // System.out.println("Book added successfully!");
-        // clearTerminal(true);
-        // }
 
         @Override
         public void removeBook(String isbn)
@@ -334,7 +309,7 @@ public class LibrarySystem
                         return;
                     }
                     System.out.print("Would you like to borrow this book? \n [1] Yes \n [2] No \nEnter your choice: ");
-                    choice = inputScanner.nextInt();
+                    choice = takeInput();
 
                     switch (choice)
                     {
@@ -429,14 +404,14 @@ public class LibrarySystem
         void removeBook();
     }
 
-    public abstract class UserAuthHandler
+    public abstract class AuthHandler
     {
         private String userType;
         private String username;
         private boolean isAdmin;
-        libraryImp1 libObj;
+        LibraryImp1 libObj;
 
-        public UserAuthHandler(libraryImp1 libObj)
+        public AuthHandler(LibraryImp1 libObj)
         {
             this.libObj = libObj;
         }
@@ -475,9 +450,12 @@ public class LibrarySystem
                         + " Main Menu \n==============================================");
 
                 System.out.print("[1] Login \n[2] Signup \n[3] Back \nEnter Your Choice: ");
-                choice = inputScanner.nextInt();
+                choice = takeInput();
                 switch (choice)
                 {
+                case -1 -> {
+                    break;
+                }
                 case 1 -> // Login Menu
                 {
                     loginMenu();
@@ -496,7 +474,7 @@ public class LibrarySystem
                     break;
                 }
                 default -> {
-                    System.out.println("Invalid Input!");
+                    System.out.println("Invalid Choice!");
                     clearTerminal(true);
                 }
                 }
@@ -609,13 +587,13 @@ public class LibrarySystem
         protected abstract void dashboard();
     }
 
-    public class Admin extends UserAuthHandler implements Admins
+    public class Admin extends AuthHandler implements Admins
     {
         private String userType = "Admin";
         private boolean isAdmin = true;
 
         // Constructor to set variable values to reflect admin
-        public Admin(libraryImp1 libObj)
+        public Admin(LibraryImp1 libObj)
         {
             super(libObj);
             this.setUserType(userType);
@@ -638,9 +616,12 @@ public class LibrarySystem
                         "========================================= \n\t\tMain Menu \n========================================= ");
 
                 System.out.print("[1] Add Book \n[2] Remove Book \n[3] Logout \nEnter Your Choice: ");
-                choice = inputScanner.nextInt();
+                choice = takeInput();
                 switch (choice)
                 {
+                case -1 -> {
+                    break;
+                }
                 case 1 -> // Display All Books
                 {
                     addBook();
@@ -660,7 +641,7 @@ public class LibrarySystem
                 }
                 default -> // Default
                 {
-                    System.out.println("Invalid Input!");
+                    System.out.println("Invalid Choice! Please try again.");
                     clearTerminal(true);
                 }
 
@@ -725,13 +706,13 @@ public class LibrarySystem
 
     }
 
-    public class User extends UserAuthHandler implements Users
+    public class User extends AuthHandler implements Users
     {
         private String userType = "User";
         private boolean isAdmin = false;
 
         // Constructor to set variable values to reflect admin
-        public User(libraryImp1 libObj)
+        public User(LibraryImp1 libObj)
         {
             super(libObj);
             this.setUserType(userType);
@@ -754,9 +735,13 @@ public class LibrarySystem
                         "========================================= \n\t\tMain Menu \n========================================= ");
 
                 System.out.print("[1] Borrow Book \n[2] Return Book \n[3] Logout \nEnter Your Choice: ");
-                choice = inputScanner.nextInt();
+                choice = takeInput();
                 switch (choice)
                 {
+                case -1 -> {
+                    break;
+                }
+
                 case 1 -> // Display All Books
                 {
                     borrowBook();
@@ -776,7 +761,7 @@ public class LibrarySystem
                 }
                 default -> // Default
                 {
-                    System.out.println("Invalid Input!");
+                    System.out.println("Invalid Choice! Please try again.");
                     clearTerminal(true);
                 }
 
@@ -801,19 +786,22 @@ public class LibrarySystem
 
                 System.out.print(
                         "[1] Display All Books \n[2] Search by Title \n[3] Search By ISBN \n[4] Exit \nEnter Your Choice: ");
-                choice = inputScanner.nextInt();
+                choice = takeInput();
                 switch (choice)
                 {
+                case -1 -> {
+                    break;
+                }
                 case 1 -> // Display All Books
                 {
                     libObj.displayAllBooks();
-                    clearTerminal(false);
+                    clearTerminal(true);
                     break;
                 }
                 case 2 -> // Borrow By Title
                 {
                     libObj.searchBook(getUsername(), "Title");
-                    clearTerminal(false);
+                    clearTerminal(true);
                     break;
                 }
                 case 3 -> // Borrow By ISBN
@@ -828,7 +816,7 @@ public class LibrarySystem
                 }
                 default -> // Default
                 {
-                    System.out.println("Invalid Input!");
+                    System.out.println("Invalid Choice! Please try again.");
                     clearTerminal(true);
                 }
 
@@ -840,6 +828,7 @@ public class LibrarySystem
         public void returnBook()
         {
             int j = 1;
+            int choice;
             Scanner inputScanner = new Scanner(System.in);
             List<IBook> booksOwned = libObj.getBooksOwned(getUsername());
 
@@ -852,8 +841,24 @@ public class LibrarySystem
                 j++;
             }
 
-            System.out.print("Which Book Would You Like To Return: ");
-            int choice = inputScanner.nextInt() - 1;
+            if (j == 1)
+            {
+                System.out.println("You have no books borrowed!");
+                clearTerminal(true);
+                return;
+            }
+
+            do
+            {
+                System.out.print("Which Book Would You Like To Return: ");
+                choice = takeInput() - 1;
+
+                if (j < choice)
+                {
+                    System.out.print("Incorrect choice!");
+                    System.out.println("");
+                }
+            } while (j < choice);
 
             String isbn = booksOwned.get(choice).getISBN();
             // Update DB
@@ -970,10 +975,27 @@ public class LibrarySystem
         }
     }
 
+    public static int takeInput()
+    {
+        Scanner inputScanner = new Scanner(System.in);
+        String input = inputScanner.nextLine();
+        int num = -1;
+
+        try
+        {
+            num = Integer.parseInt(input);
+        } catch (Exception e)
+        {
+            System.out.println("Invalid Input! Please try again.");
+            clearTerminal(true);
+        }
+        return num;
+    }
+
     public static void main(String[] args)
     {
         LibrarySystem librarySystem = new LibrarySystem();
-        libraryImp1 libObj = librarySystem.new libraryImp1();
+        LibraryImp1 libObj = librarySystem.new LibraryImp1();
 
         testConnection();
         clearTerminal(false);
@@ -991,9 +1013,12 @@ public class LibrarySystem
                     "========================================= \n\t\tMain Menu \n========================================= ");
 
             System.out.print("[1] User \n[2] Admin \n[3] Exit \nEnter Your Choice: ");
-            choice = inputScanner.nextInt();
+            choice = takeInput();
             switch (choice)
             {
+            case -1 -> {
+                break;
+            }
             case 1 -> // User Main Menu
             {
                 userObj.mainMenu();
@@ -1012,7 +1037,7 @@ public class LibrarySystem
                 run = false;
             }
             default -> {
-                System.out.println("Invalid Input!");
+                System.out.println("Invalid Choice! Please try again.");
                 clearTerminal(true);
             }
 
