@@ -4,11 +4,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Scanner;
-
-import com.library.LibrarySystem.User;
-
 import java.io.IOException;
 import java.sql.*;
+import java.text.SimpleDateFormat;
+
+// import com.library.LibrarySystem.User;
 
 public class LibrarySystem
 {
@@ -201,34 +201,73 @@ public class LibrarySystem
         @Override
         public void addBook(IBook book)
         {
-            String QUERY = "INSERT INTO Book (Title, Author, ISBN, Publisher, Genre, PublicationDate, BorrowedBy) VALUES ("
-                    + book.getTitle() + "," + book.getAuthor() + "," + book.getISBN() + "," + book.getPublisher() + ","
-                    + book.getGenre() + "," + book.getPublicationDate() + ", NULL)";
+            String QUERY = "INSERT INTO Books (Title, Author, ISBN, Publisher, Genre, PublicationDate, BorrowedBy) VALUES (?, ?, ?, ?, ?, ?, NULL)";
 
-            try (ResultSet rs = stmt.executeQuery(QUERY);)
+            try (PreparedStatement pstmt = conn.prepareStatement(QUERY))
             {
-            } catch (Exception e)
+                pstmt.setString(1, book.getTitle());
+                pstmt.setString(2, book.getAuthor());
+                pstmt.setString(3, book.getISBN());
+                pstmt.setString(4, book.getPublisher());
+                pstmt.setString(5, book.getGenre());
+
+                // Check if the publication date is valid
+                java.util.Date pubDate = book.getPublicationDate();
+                if (pubDate == null)
+                {
+                    pubDate = new java.util.Date(); // Set to current date if null
+                }
+                pstmt.setDate(6, new java.sql.Date(pubDate.getTime()));
+
+                pstmt.executeUpdate();
+                this.libBooks.add(book);
+                System.out.println("Book added successfully!");
+            } catch (SQLException e)
             {
-                System.out.println("Failed");
+                System.out.println("Could not add book: " + e.getMessage());
             }
-
-            this.libBooks.add(book);
+            clearTerminal(true);
         }
+
+        // public void addBook(IBook book)
+        // {
+        // String QUERY = "INSERT INTO Books (Title, Author, ISBN, Publisher, Genre,
+        // PublicationDate, BorrowedBy) VALUES ('"
+        // + book.getTitle() + "','" + book.getAuthor() + "'," + book.getISBN() + ",'" +
+        // book.getPublisher()
+        // + "','" + book.getGenre() + "'," + new
+        // java.sql.Date(book.getPublicationDate().getTime())
+        // + ", NULL)";
+
+        // try
+        // {
+        // stmt.executeUpdate(QUERY);
+        // } catch (Exception e)
+        // {
+        // System.out.println("Could not add book!" + e.getMessage());
+        // clearTerminal(true);
+        // return;
+        // }
+
+        // this.libBooks.add(book);
+        // System.out.println("Book added successfully!");
+        // clearTerminal(true);
+        // }
 
         @Override
         public void removeBook(String isbn)
         {
             // Delete from DB
-            String QUERY = "DELETE FROM BOOKS WHERE ISBN = '" + isbn + "')";
+            String QUERY = "DELETE FROM BOOKS WHERE ISBN = " + isbn;
 
-            try (ResultSet rs = stmt.executeQuery(QUERY);)
+            try
             {
-                while (rs.next())
-                {
-                }
+                stmt.executeUpdate(QUERY);
             } catch (Exception e)
             {
-                System.out.println("Failed");
+                System.out.println("No book with this ISBN found!");
+                clearTerminal(true);
+                return;
             }
 
             // Delete from IBooks list.
@@ -239,6 +278,8 @@ public class LibrarySystem
                     libBooks.remove(i);
                 }
             }
+            System.out.println("Book Deleted From Library System!");
+            clearTerminal(true);
         }
 
         @Override
@@ -379,6 +420,13 @@ public class LibrarySystem
         void borrowBook();
 
         void returnBook();
+    }
+
+    public interface Admins
+    {
+        void addBook();
+
+        void removeBook();
     }
 
     public abstract class UserAuthHandler
@@ -561,7 +609,7 @@ public class LibrarySystem
         protected abstract void dashboard();
     }
 
-    public class Admin extends UserAuthHandler
+    public class Admin extends UserAuthHandler implements Admins
     {
         private String userType = "Admin";
         private boolean isAdmin = true;
@@ -577,8 +625,104 @@ public class LibrarySystem
         @Override
         protected void dashboard()
         {
-            libObj.displayAllBooks();
+            clearTerminal(false);
+
+            Scanner inputScanner = new Scanner(System.in);
+
+            boolean run = true;
+            int choice = 0;
+
+            do
+            {
+                System.out.println(
+                        "========================================= \n\t\tMain Menu \n========================================= ");
+
+                System.out.print("[1] Add Book \n[2] Remove Book \n[3] Logout \nEnter Your Choice: ");
+                choice = inputScanner.nextInt();
+                switch (choice)
+                {
+                case 1 -> // Display All Books
+                {
+                    addBook();
+                    clearTerminal(false);
+                    break;
+                }
+                case 2 -> // Admin Main Menu
+                {
+                    removeBook();
+                    clearTerminal(false);
+                    break;
+                }
+                case 3 -> // Exit Program
+                {
+                    System.out.println("Exiting Program!");
+                    run = false;
+                }
+                default -> // Default
+                {
+                    System.out.println("Invalid Input!");
+                    clearTerminal(true);
+                }
+
+                }
+            } while (run);
         }
+
+        public void addBook()
+        {
+            clearTerminal(false);
+
+            String title;
+            String author;
+            String isbn;
+            String publisher;
+            Date publicationDate;
+            String genre;
+            Scanner inputScanner = new Scanner(System.in);
+
+            System.out.print("Enter Title: ");
+            title = inputScanner.nextLine();
+
+            System.out.print("Enter Author: ");
+            author = inputScanner.nextLine();
+
+            System.out.print("Enter ISBN: ");
+            isbn = inputScanner.nextLine();
+
+            System.out.print("Enter Publisher: ");
+            publisher = inputScanner.nextLine();
+
+            System.out.print("Enter Genre: ");
+            genre = inputScanner.nextLine();
+
+            SimpleDateFormat format = new SimpleDateFormat("E, MM dd yy");
+            System.out.print("Enter PublicationDate (MM DD YY): ");
+            try
+            {
+                publicationDate = format.parse(inputScanner.nextLine());
+
+            } catch (Exception e)
+            {
+                System.out.print("Invalid date input! Setting publishing date to today...");
+                publicationDate = new java.sql.Date(System.currentTimeMillis());
+            }
+            bookImpl newbook = new bookImpl(title, author, isbn, publisher, genre, publicationDate, genre);
+            libObj.addBook(newbook);
+        }
+
+        public void removeBook()
+        {
+            clearTerminal(false);
+
+            String isbn;
+            Scanner inputScanner = new Scanner(System.in);
+
+            System.out.print("Enter ISBN of book you'd like to remove: ");
+            isbn = inputScanner.nextLine();
+
+            libObj.removeBook(isbn);
+        }
+
     }
 
     public class User extends UserAuthHandler implements Users
