@@ -2,7 +2,6 @@ package com.infodat.library_borrow_springboot;
 
 import com.infodat.library_borrow_springboot.api.entity.BooksEntity;
 import com.infodat.library_borrow_springboot.api.entity.UsersEntity;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;

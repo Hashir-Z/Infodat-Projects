@@ -3,28 +3,41 @@
 
 package com.infodat.library_borrow_springboot.api.controller;
 
+import com.infodat.library_borrow_springboot.api.dto.BooksDTO;
 import com.infodat.library_borrow_springboot.api.entity.BooksEntity;
 import com.infodat.library_borrow_springboot.api.service.BooksService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
+@AllArgsConstructor
 @RestController
 @RequestMapping(path = "api/v1/books")
 public class BooksController {
-GI
     // Variable
     private final BooksService booksService;
 
-    // Constructor
-    @Autowired
-    public BooksController(BooksService booksService) {
-        this.booksService = booksService;
+    @GetMapping("/get-all-books")
+    public ResponseEntity<List<BooksDTO>> getAllBooks() {
+        return booksService.getAllBooks();
     }
 
     @PostMapping("/find-isbn")
-    public Optional<BooksEntity> findBook(String isbn) {
+    public Map<String, Object> findBook(@RequestParam String isbn) {
         return booksService.findISBN(isbn);
+    }
+
+    @PostMapping("/add-book")
+    public String addBook(@RequestBody BooksDTO bookDTO) {
+        return booksService.addBook(bookDTO);
+    }
+
+    @PostMapping("/delete-book")
+    public String deleteBook(@RequestParam String isbn) {
+        return booksService.deleteBook(isbn);
     }
 }

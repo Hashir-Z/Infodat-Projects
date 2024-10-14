@@ -1,13 +1,15 @@
 package com.infodat.library_borrow_springboot.api.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDate;
 
-@Getter
-@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@Data
 @Entity
 @Table(name = "books")
 public class BooksEntity {
@@ -23,6 +25,7 @@ public class BooksEntity {
     @Column(name = "genre", length = 400)
     private String genre;
 
+    @JsonFormat(pattern = "MM/dd/yyyy")
     @Column(name = "publicationdate")
     private LocalDate publicationdate;
 
@@ -31,5 +34,6 @@ public class BooksEntity {
     private UsersEntity borrowedby;
 
     @Id
+    @JsonProperty("ISBN")
     private String ISBN;
 }

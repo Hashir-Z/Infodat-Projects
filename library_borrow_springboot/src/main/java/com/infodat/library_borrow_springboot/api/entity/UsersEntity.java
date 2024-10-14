@@ -5,8 +5,6 @@ package com.infodat.library_borrow_springboot.api.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-@Setter
-@Getter
 @Entity(name = "UserEntity")
 @Table(name = "users")
 @Data
