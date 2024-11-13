@@ -6,6 +6,7 @@ package com.infodat.library_borrow_springboot.api.service;
 
 import com.infodat.library_borrow_springboot.api.dto.BooksDTO;
 import com.infodat.library_borrow_springboot.api.dto.BooksMapper;
+import com.infodat.library_borrow_springboot.api.dto.BooksMapperImpl;
 import com.infodat.library_borrow_springboot.api.entity.BooksEntity;
 import com.infodat.library_borrow_springboot.api.repository.BooksRepository;
 import lombok.AllArgsConstructor;
@@ -13,7 +14,6 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.http.ResponseEntity;
 
-import java.awt.print.Book;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +24,7 @@ import java.util.Optional;
 public class BooksService {
     private final BooksRepository booksRepository;
     private final ModelMapper modelMapper;
-    private final BooksMapper booksMapper;
+    private final BooksMapper booksMapper = new BooksMapperImpl();
 
     public Map<String, Object> findISBN(String isbn) {
         try {
